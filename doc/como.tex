@@ -1,0 +1,237 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{natbib}
+\setcitestyle{authoryear, open={(},close={)}}
+% Use Times fonts
+\usepackage{astro_journal_names}
+\usepackage{mathptmx}
+\usepackage[scaled]{helvet}
+\renewcommand{\ttdefault}{pcr}
+\usepackage{bm}
+
+\setlength{\oddsidemargin}{0pt}   %%% left margin
+\setlength{\textwidth}{159.2mm}
+\setlength{\topmargin}{0mm}
+\setlength{\headheight}{10mm}
+\setlength{\headsep}{10mm}         %%% length between header and test
+\setlength{\textheight}{219.2mm}
+
+%\setlength{\parindent}{0pt}
+
+
+%\bibliographystyle{abbrvnat}
+
+%\renewcommand{\headrulewidth}{0pt}
+
+\title{COLA mocks for VIPERS PDR2}
+\author{Jun Koda}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Overview}
+
+We create 1020 realasations of mock galaxy catalogues for the VIMOS
+Public Extragalactic Redshift Survey (VIPERS) Public Data Realase 2
+(PDR2) using an approximate simulation method called the COmoving
+Lagrangian Acceleration (COLA) simulation
+\citep{2013JCAP...06..036T}. We populate the dark matter halo using
+the Halo Occupation Distribution (HOD) that matches the VIPERS galaxy
+number density and projected correlation function
+(\S~\ref{section:hod}). The purpose of these mocks is to compute the
+covariace matrix, which requires many realisation.
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{ccc}
+  \hline
+  region & filename & index $n$\\
+  \hline
+  W1 & w1/mock\_w1\_n.txt & 00001 -- 01020\\
+  W4 & w4/mock\_w4\_n.txt & 00001 -- 01020\\
+  \hline
+\end{tabular}
+\caption{File name convension}
+\label{table:filename}
+\end{center}
+\end{table}
+
+
+\noindent VIPERS consists of two regions in the sky, W1 and W4; each
+mock catalogue is labelled by the region name, w1 or w4, and the index
+$n = 1,2,\dots,1020$ (Table~\ref{table:filename}). All mocks are
+basically independent --- there are some long-wavelength correlation
+when they are created from a common simulation box, but all mocks are
+created either from non-overlapping volumes or from independent
+simulations. We create 3 mocks for W1 ($n = 3i - 2, 3i - 1$, and $3i$
+for $i=1,2,\dots, 340$) or 6 mocks for W4 ($n = 6i-5, \dots, 6i$ for
+$i = 1,2,\dots,170$) from one simulation box.
+
+The mock catalogue is an ascii file separated by spaces as descibed in
+Table~\ref{table:file-format}. The origin of the comoving coordinate
+$\bm{x} = \bm{0}$ is the observer, and the $x_1$ axis is passing the
+centre of the survey colume (Fig~??). The `cosmological` redshift
+$z_\mathrm{cosmo}$ corresponds to the real space distance from the observer,
+$z_\mathrm{RSD}$ includes the Doppler shift due to the peculiar
+velocity, and $z_\mathrm{obs}$ includes the redshift error (ref
+section ??) in addition.
+
+
+\begin{table}
+\begin{center}
+  \begin{tabular}[b]{cccl}
+    \hline
+    Column &  & Unit & Description\\
+    \hline
+    1      & ID            & & unique nonnegative integer\\
+    2 -- 4 & $x_1,x_2, x_3$ & $[h^{-1} \,\mathrm{Mpc}]$ &
+             comoving corrdinate in redshift space\\
+    5      & $v_r$ & $[\textrm{km s}^{-1}]$ & line-of-sight peculiar velocity
+             including $v_{r,sat}$\\
+    6      & $z_\mathrm{cosmo}$ & &
+             cosmological redshift; a function of realspace position\\
+    7      & $z_\mathrm{RSD}$ & & $z_\mathrm{cosmo} + $
+             peculiar velocity Doppler shift\\
+    8      & $z_\mathrm{obs}$ & & $z_\mathrm{RSD} + $ measurement error\\
+    9      & $M_{200,m}$ & $[h^{-1} M_\odot]$ & host halo mass\\
+    10     & $r_{sat}$   & $[h^{-1} \,\mathrm{Mpc}]$ &
+             galaxy displacement from halo centre\\
+    11     & $v_{r, sat}$ & $[\textrm{km s}^{-1}]$ &
+             line-of-sight virial velocity\\
+    12     & $w_\mathrm{TSR}$ & & TSR weight\\
+    13     & $w_\mathrm{SSR}$ & & SSR weight\\
+    14     & quadrant & & name of the quadrant\\
+    \hline
+  \end{tabular}
+  \caption{File format of mock galaxy catalogues}
+  \label{table:file-format}
+\end{center}
+\end{table}
+
+\section{Simulation}
+
+We use a parellel COLA simulation code \citep{2016MNRAS.459.2118K}.
+with a cubic periodic box with $600h^{-1} \,\mathrm{Mpc}$ on a side,
+$2048^3$ particles and the same number of grids for Particle Mesh
+force computation. The cosmological parameters are based on the Big
+MultiDark Planck
+simulation\footnote{https://www.cosmosim.org/cms/simulations/bigmdpl/},
+$\Omega_m = 0.31, \Omega_\Lambda = 0.69, \Omega_b = 0.048, h = 0.67,
+\sigma_8 = 0.82, n_s = 0.96$
+
+We setup the initial condition at scale factor $a=0.1$ using the 2nd-order
+Lagrangial Pertubation Theory and evolve with timestep $\Delta a =
+0.05$. We identify dark matter haloes using the Friends-of-Friends algorithm
+\citep{1985ApJ...292..371D} with linking length $\ell = 0.168$ times
+the mean particle separation length. We calibrate the halo mass according to the \citet{2010ApJ...724..878T} mass function by matching the halo number density above the halo mass:
+\begin{equation}
+  n_\mathrm{FoF}(>M_\mathrm{FoF}) = n_\mathrm{Tinker}(>M_{200,m})
+\end{equation}
+The halo mass $M_{200,m}$ is defined by the mass enclosed by a sphere, within
+which the mean density is 200 times the mean matter density.
+
+\section{Lightcone}
+We first remap the cubic periodic box to a longer cuboid that can cover
+the survey volume \citep{2010ApJS..190..311C}. The remapping is
+characterised by three integer vectors $\bm{u}_i$, which specifies
+the basis vectors $\bm{e}_i$ as follows:
+%
+\begin{align}
+  \label{eq:remapping}
+  \bm{e}_1 &= \bm{u}_1/|\bm{u}_1| \nonumber\\
+  \bm{e}_2 &= \bm{u}'_2/|\bm{u}'_2|,
+    \quad u'_2  \equiv \bm{u}_2 -
+    (\bm{u}_1 \cdot \bm{u}_2/|\bm{u}_1|^2) \bm{u}_1,   \nonumber \\
+  \bm{e}_3 &= \bm{e}_1 \times \bm{e}_2.
+\end{align}
+%
+
+\begin{table}
+\begin{center}
+\begin{tabular}{ccccc}
+\hline
+region & remapped boxsize & $\bm{u}_1$ & $\bm{u}_2$ & $\bm{u}_3$\\  
+\hline
+W1 & ?? & $(2, 2, 1)$ & $(1, 0, 0)$ & $(0, 1, 0)$\\
+W4 & ?? & $(2, 2, 1)$ & $(1, 0, 3)$ & $(1, 1, 0)$\\
+\hline
+\end{tabular}
+\end{center}
+\caption{Box remapping}
+\label{table:box-remapping}
+\end{table}
+
+We use 6 snapshots from scale factor $a=0.45$ to $0.70$, separated by
+$\Delta a = 0.05$ to cover the redshift range $z= 0.4 -- 1.2$ ($a =
+0.455 -- 0.714$). We create a lightcone by extracting haloes in a
+distance range that corresponds to $a_i - 0.025 < a < a_i + 0.025$ from a
+snapshot at scale factor $a_i$.
+
+\section{Halo Occupation Distribution (HOD)}
+\label{section:hod}
+
+We populate dark matter haloes in the COLA simulation with the Halo
+Occupation Distribution to match the observed galaxy number and
+clustering properties. We use the HOD parameterisation by
+\citet{2005ApJ...633..791Z}: The probability that a halo with mass $M$ has
+a central galaxy is given by,
+%
+\begin{equation}
+  \langle n_\mathrm{cen} \rangle = \frac{1}{2}
+  \left[ 1 + \mathrm{erf}\left( \frac{\log_{10} M - \log_{10} M_\mathrm{min}}{\sigma_{\log M}} \right) \right],
+\end{equation}
+%
+and a mean number of satellite galaxy, under the condition that the halo has a central galaxy, is,
+%
+\begin{equation}
+  \langle n_\mathrm{sat} \rangle = \left( \frac{M - M_0}{M_1} \right)^\alpha.
+\end{equation}
+%
+The distribution contains 5 free parameters, but we fix one parameter,
+\begin{equation}
+  M_0 = M_\mathrm{min},
+\end{equation}
+since it does not strongly affect the galaxy statistics
+\citep[e.g.][]{2013A&A...557A..54D}.
+
+
+\begin{align}
+  \log_{10} M_\mathrm{min}  &= c_0 + c_1 (z - z_0) + c_2 (z - z_0)^2 + c_3 (z - z_0)^3\\
+  M_0                     &= M_\mathrm{min}\\
+  \sigma_{\log_{10} M}      &= c_4 + c_5 (z - z_0)\\
+  \log_{10} (M_1/M_\mathrm{min}) &= c_6 + c_7 (z - z_0) \\
+  \alpha                  &= c_8 + c_9 (z - z_0)
+\end{align}
+
+The constant $z_0$ can be set to any value without loss of generatity;
+
+\section{Parent catalogue}
+
+We create mock catalogues in two steps; we first create a
+\textit{parent catalogue} which corresponds to a photometric source
+catalgue, and then add effects of target sampling
+(\S~\ref{section:tsr}), spectroscopic succsess rate
+(\S~\ref{section:ssr}), and redshift error (\S~\ref{section:zerror}).
+
+
+
+\section{Target Sampling Rate (TSR)}
+\label{section:tsr}
+
+\section{Sepectroscopic Success Rate (SSR)}
+\label{section:ssr}
+
+\section{Redshift error}
+\label{section:zerror}
+
+
+
+\bibliographystyle{plainnat}
+\bibliography{como}
+
+\label{LastPage}
+\end{document}
+
